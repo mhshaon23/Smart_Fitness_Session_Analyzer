@@ -23,7 +23,7 @@ The application is written strictly with the **Python standard library** (standa
 The project is structured into modular components with clear separation of concerns:
 
 ```text
-Assignment 1/
+Smart_Fitness_Session_Analyzer/
 |-- option_a_fitness/       # Instructor-provided generator and documentation
 |   |-- DATA_DESCRIPTION.md
 |   |-- data_generator.py
@@ -133,7 +133,7 @@ flowchart TD
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/USERNAME/REPOSITORY.git
+   git clone https://github.com/mhshaon23/Smart_Fitness_Session_Analyzer.git
    cd REPOSITORY
    ```
 
