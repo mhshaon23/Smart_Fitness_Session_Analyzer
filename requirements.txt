@@ -1,0 +1,4 @@
+# Requirements for Smart Fitness Session Analyzer
+# This project relies entirely on the Python Standard Library (Python 3.10+).
+# No third-party packages (such as pandas, numpy, or scikit-learn) are required.
+
