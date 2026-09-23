@@ -1,6 +1,6 @@
 """Sample data loader and generator for the Smart Fitness Session Analyzer.
 
-Provides standardized datasets for the five required test scenarios:
+Provides datasets for the five required test scenarios:
 - resting session
 - moderate activity
 - high activity
@@ -12,9 +12,8 @@ Imports and wraps the course generator from option_a_fitness/data_generator.py.
 
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple, Any
 
-# Ensure option_a_fitness can be imported regardless of execution working directory
+# Add option_a_fitness to path to import data_generator.py
 CURRENT_DIR = Path(__file__).resolve().parent
 GENERATOR_DIR = CURRENT_DIR / "option_a_fitness"
 if str(GENERATOR_DIR) not in sys.path:
@@ -29,7 +28,7 @@ except ImportError:
     )
 
 
-# Standard scenarios mapped with consistent seeds for deterministic testing
+# Predefined configurations for the 5 scenarios with fixed seeds for reproducibility
 SCENARIOS_CONFIG = [
     {
         "scenario": "resting",
@@ -69,17 +68,8 @@ SCENARIOS_CONFIG = [
 ]
 
 
-def load_scenario_dataset(
-    scenario_name: str,
-    participant_id: str = "P001",
-    seed: int = 42,
-    number_of_windows: int = 12,
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-    """Generate raw data dictionaries for a specific scenario name.
-
-    Returns:
-        (participant_profile_dict, list_of_observation_dicts)
-    """
+def load_scenario_dataset(scenario_name, participant_id="P001", seed=42, number_of_windows=12):
+    """Generate raw data dictionaries for a specific scenario using data_generator.py."""
     return generate_fitness_data(
         participant_id=participant_id,
         scenario=scenario_name,
@@ -88,7 +78,7 @@ def load_scenario_dataset(
     )
 
 
-def get_all_test_scenarios() -> List[Dict[str, Any]]:
+def get_all_test_scenarios():
     """Return all 5 predefined scenario datasets with metadata for demonstration and testing."""
     scenarios_data = []
     for cfg in SCENARIOS_CONFIG:
@@ -114,4 +104,3 @@ if __name__ == "__main__":
     print("Participant Profile:", prof)
     print(f"Total Observations Generated: {len(obs)}")
     print("First Observation Sample:", obs[0])
-

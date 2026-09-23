@@ -201,7 +201,7 @@ class FitnessSession:
     Demonstrates composition: A FitnessSession has a Participant and a list of Observations.
     """
 
-    # We need at least 5 valid observations and 50% usable data
+    # Requires at least 5 valid observations and 50% usable data
     MIN_USABLE_OBSERVATIONS = 5
     MIN_USABLE_RATIO = 0.50
 
@@ -289,7 +289,7 @@ class FitnessSession:
         total_count = len(self.observations)
         valid_count = len(valid_obs)
 
-        # 1. Check if we have enough usable data
+        # 1. Check if data sufficiency threshold is met
         if (
             valid_count < self.MIN_USABLE_OBSERVATIONS
             or (total_count > 0 and (valid_count / total_count) < self.MIN_USABLE_RATIO)
