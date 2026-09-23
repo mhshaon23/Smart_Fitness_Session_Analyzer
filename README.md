@@ -126,7 +126,7 @@ flowchart TD
 1. Clone the repository:
    ```bash
    git clone https://github.com/mhshaon23/Smart_Fitness_Session_Analyzer.git
-   cd REPOSITORY
+   cd Smart_Fitness_Session_Analyzer
    ```
 
 2. Run the main demonstration script:
