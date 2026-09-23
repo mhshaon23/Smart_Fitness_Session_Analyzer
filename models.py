@@ -1,13 +1,12 @@
-"""Domain classes for the Smart Fitness Session Analyzer.
+"""Domain classes for the fitness session analyzer.
 
-This module defines the core object-oriented architecture:
-- Participant: Encapsulates user profile data and resting baseline values.
-- Observation: Models single sensor windows, parsing dictionaries and validating data.
-- FitnessSession: Coordinates observations for a participant (demonstrating composition).
-- AdvancedFitnessSession: Extends FitnessSession with cardiovascular strain analytics (inheritance & overriding).
+Includes:
+- Participant: Stores user info and baseline values (encapsulation).
+- Observation: Stores single sensor readings and validates them (classmethod & staticmethod).
+- FitnessSession: Manages observations for a participant (composition).
+- AdvancedFitnessSession: Subclass adding cardiovascular strain metrics (inheritance & overriding).
 """
 
-from typing import List, Dict, Any, Tuple, Optional
 from calculations import (
     calculate_summary_statistics,
     detect_recovery_trend,
@@ -17,72 +16,60 @@ from calculations import (
 
 
 class Participant:
-    """Represents a gym participant and their personal physiological reference baselines.
+    """Represents a gym participant and their personal baseline resting values."""
 
-    Demonstrates encapsulation by managing resting heart rate, skin response,
-    and body temperature through protected attributes with property getters and setters
-    that enforce biological sanity checks.
-    """
-
-    def __init__(
-        self,
-        participant_id: str,
-        baseline_heart_rate: int,
-        baseline_skin_response: float,
-        baseline_temperature: float,
-    ) -> None:
+    def __init__(self, participant_id, baseline_heart_rate, baseline_skin_response, baseline_temperature):
         if not isinstance(participant_id, str) or not participant_id.strip():
             raise ValueError("participant_id must be a non-empty string")
 
         self.participant_id = participant_id.strip()
 
-        # Initialize via properties to ensure validation rules run on initialization
-        self._baseline_heart_rate: int = 0
-        self._baseline_skin_response: float = 0.0
-        self._baseline_temperature: float = 0.0
+        # Set up private variables for encapsulation
+        self._baseline_heart_rate = 0
+        self._baseline_skin_response = 0.0
+        self._baseline_temperature = 0.0
 
+        # Use properties to validate inputs on creation
         self.baseline_heart_rate = baseline_heart_rate
         self.baseline_skin_response = baseline_skin_response
         self.baseline_temperature = baseline_temperature
 
-    # --- Encapsulation: Baseline Heart Rate ---
+    # --- Property and setter for baseline heart rate (Encapsulation) ---
     @property
-    def baseline_heart_rate(self) -> int:
-        """Personal resting heart rate baseline in beats per minute."""
+    def baseline_heart_rate(self):
         return self._baseline_heart_rate
 
     @baseline_heart_rate.setter
-    def baseline_heart_rate(self, value: int) -> None:
+    def baseline_heart_rate(self, value):
         if not isinstance(value, (int, float)):
             raise TypeError("Baseline heart rate must be a numeric value")
+        # Check against normal resting heart rate limits
         if value < 35 or value > 110:
             raise ValueError(
                 f"Resting baseline heart rate {value} bpm is outside plausible human resting limits (35-110 bpm)"
             )
         self._baseline_heart_rate = int(round(value))
 
-    # --- Encapsulation: Baseline Skin Response ---
+    # --- Property and setter for baseline skin response ---
     @property
-    def baseline_skin_response(self) -> float:
-        """Personal reference skin response in simulated conductance units."""
+    def baseline_skin_response(self):
         return self._baseline_skin_response
 
     @baseline_skin_response.setter
-    def baseline_skin_response(self, value: float) -> None:
+    def baseline_skin_response(self, value):
         if not isinstance(value, (int, float)):
             raise TypeError("Baseline skin response must be numeric")
         if value < 0.0:
             raise ValueError("Baseline skin response cannot be negative")
         self._baseline_skin_response = round(float(value), 2)
 
-    # --- Encapsulation: Baseline Skin Temperature ---
+    # --- Property and setter for baseline temperature ---
     @property
-    def baseline_temperature(self) -> float:
-        """Personal reference skin temperature in degrees Celsius."""
+    def baseline_temperature(self):
         return self._baseline_temperature
 
     @baseline_temperature.setter
-    def baseline_temperature(self, value: float) -> None:
+    def baseline_temperature(self, value):
         if not isinstance(value, (int, float)):
             raise TypeError("Baseline temperature must be numeric")
         if value < 28.0 or value > 38.0:
@@ -91,8 +78,8 @@ class Participant:
             )
         self._baseline_temperature = round(float(value), 2)
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert participant profile into a standard dictionary format."""
+    def to_dict(self):
+        """Return participant details as a dictionary."""
         return {
             "participant_id": self.participant_id,
             "baseline_heart_rate": self.baseline_heart_rate,
@@ -100,7 +87,7 @@ class Participant:
             "baseline_temperature": self.baseline_temperature,
         }
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return (
             f"Participant(id='{self.participant_id}', baseline_hr={self.baseline_heart_rate}, "
             f"baseline_skin={self.baseline_skin_response}, baseline_temp={self.baseline_temperature})"
@@ -108,27 +95,15 @@ class Participant:
 
 
 class Observation:
-    """Represents a single time window reading captured from a wearable device.
+    """Represents a single sensor reading window from the wearable device."""
 
-    Validates physiological bounds and sensor quality, recording reasons for rejection
-    if the observation cannot be trusted.
-    """
-
-    # Quality and physiological boundary constants
+    # Sensor ranges and minimum signal quality threshold
     MIN_SIGNAL_QUALITY = 0.60
     MIN_HR, MAX_HR = 35, 205
     MIN_TEMP, MAX_TEMP = 25.0, 42.0
     MIN_ACTIVITY, MAX_ACTIVITY = 0.0, 1.0
 
-    def __init__(
-        self,
-        timestamp: int,
-        heart_rate: Optional[int],
-        skin_response: Optional[float],
-        temperature: Optional[float],
-        activity_level: Optional[float],
-        signal_quality: Optional[float],
-    ) -> None:
+    def __init__(self, timestamp, heart_rate, skin_response, temperature, activity_level, signal_quality):
         self.timestamp = timestamp
         self.heart_rate = heart_rate
         self.skin_response = skin_response
@@ -136,15 +111,12 @@ class Observation:
         self.activity_level = activity_level
         self.signal_quality = signal_quality
 
-        self.rejection_reasons: List[str] = []
+        self.rejection_reasons = []
         self._validate()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Observation":
-        """Factory class method to create an Observation directly from a raw dictionary.
-
-        Safely parses expected fields, handling potential type casts or missing keys.
-        """
+    def from_dict(cls, data):
+        """Class method to create an Observation directly from a raw dictionary."""
         return cls(
             timestamp=data.get("timestamp", 0),
             heart_rate=data.get("heart_rate"),
@@ -155,16 +127,8 @@ class Observation:
         )
 
     @staticmethod
-    def validate_metric_range(
-        value: Optional[float | int],
-        lower_bound: float,
-        upper_bound: float,
-        metric_name: str,
-    ) -> Optional[str]:
-        """Static helper to verify if a numeric metric falls within an expected range.
-
-        Returns an error description string if out of bounds or None, else None.
-        """
+    def validate_metric_range(value, lower_bound, upper_bound, metric_name):
+        """Static method to check if a numeric reading falls within acceptable bounds."""
         if value is None:
             return f"Missing value for {metric_name}"
         if not isinstance(value, (int, float)):
@@ -175,8 +139,8 @@ class Observation:
             )
         return None
 
-    def _validate(self) -> None:
-        """Run all data hygiene checks and populate rejection reasons."""
+    def _validate(self):
+        """Check for missing or impossible values, and weak signal quality."""
         # 1. Signal quality check
         if self.signal_quality is None:
             self.rejection_reasons.append("Missing signal_quality")
@@ -196,7 +160,7 @@ class Observation:
         if self.skin_response is None:
             self.rejection_reasons.append("Missing value for skin_response")
         elif not isinstance(self.skin_response, (int, float)) or self.skin_response < 0:
-            self.rejection_reasons.append(f"Skin response {self.skin_response} must be >= 0")
+            self.rejection_reasons.append("Skin response must be >= 0")
 
         # 4. Temperature check
         temp_err = self.validate_metric_range(self.temperature, self.MIN_TEMP, self.MAX_TEMP, "temperature")
@@ -209,12 +173,12 @@ class Observation:
             self.rejection_reasons.append(act_err)
 
     @property
-    def is_valid(self) -> bool:
-        """Indicates whether the observation passed all data quality and validity checks."""
+    def is_valid(self):
+        """True if there were no rejection reasons."""
         return len(self.rejection_reasons) == 0
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize observation state into a dictionary."""
+    def to_dict(self):
+        """Convert observation to dictionary."""
         return {
             "timestamp": self.timestamp,
             "heart_rate": self.heart_rate,
@@ -226,50 +190,49 @@ class Observation:
             "rejection_reasons": list(self.rejection_reasons),
         }
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         status = "VALID" if self.is_valid else f"INVALID ({len(self.rejection_reasons)} issues)"
         return f"Observation(t={self.timestamp}, hr={self.heart_rate}, act={self.activity_level}, status={status})"
 
 
 class FitnessSession:
-    """Represents a complete workout/recording session for a specific participant.
+    """Represents a workout session for a participant.
 
-    Demonstrates composition: A FitnessSession 'has-a' Participant instance and
-    'has-many' Observation instances.
+    Demonstrates composition: A FitnessSession has a Participant and a list of Observations.
     """
 
-    # Minimum valid observations needed to reliably classify a workout session
+    # We need at least 5 valid observations and 50% usable data
     MIN_USABLE_OBSERVATIONS = 5
     MIN_USABLE_RATIO = 0.50
 
-    def __init__(self, participant: Participant, session_name: str = "Training Session") -> None:
+    def __init__(self, participant, session_name="Training Session"):
         if not isinstance(participant, Participant):
             raise TypeError("participant must be an instance of Participant")
-        self.participant: Participant = participant
-        self.session_name: str = session_name
-        self.observations: List[Observation] = []
+        self.participant = participant
+        self.session_name = session_name
+        self.observations = []
 
-    def add_observation(self, observation: Observation) -> None:
-        """Add a single Observation object to this session."""
+    def add_observation(self, observation):
+        """Add one Observation object to the session."""
         if not isinstance(observation, Observation):
             raise TypeError("observation must be an instance of Observation")
         self.observations.append(observation)
 
-    def add_raw_observations(self, raw_data_list: List[Dict[str, Any]]) -> None:
-        """Batch add observations from raw dictionaries using Observation.from_dict."""
+    def add_raw_observations(self, raw_data_list):
+        """Convert a list of raw dictionaries into Observation objects and add them."""
         for item in raw_data_list:
             self.add_observation(Observation.from_dict(item))
 
-    def get_valid_observations(self) -> List[Observation]:
-        """Return only observations that passed data validation."""
+    def get_valid_observations(self):
+        """Return list of usable observations."""
         return [obs for obs in self.observations if obs.is_valid]
 
-    def get_rejected_observations(self) -> List[Observation]:
-        """Return observations that failed data validation."""
+    def get_rejected_observations(self):
+        """Return list of rejected observations."""
         return [obs for obs in self.observations if not obs.is_valid]
 
-    def calculate_summaries(self) -> Dict[str, Any]:
-        """Calculate statistical summaries and baseline comparisons across valid observations."""
+    def calculate_summaries(self):
+        """Calculate averages, minimums, maximums, and baseline comparison."""
         valid_obs = self.get_valid_observations()
         total_count = len(self.observations)
         valid_count = len(valid_obs)
@@ -320,19 +283,13 @@ class FitnessSession:
             "baseline_deviations": baseline_devs,
         }
 
-    def classify(self) -> Tuple[str, str]:
-        """Classify session intensity and physiological response.
-
-        Returns:
-            (classification_label, explanation_text)
-            Possible labels: 'insufficient data', 'recovering', 'resting',
-                             'moderate activity', 'high activity'
-        """
+    def classify(self):
+        """Classify session intensity based on baseline deviations and activity."""
         valid_obs = self.get_valid_observations()
         total_count = len(self.observations)
         valid_count = len(valid_obs)
 
-        # 1. Check data sufficiency
+        # 1. Check if we have enough usable data
         if (
             valid_count < self.MIN_USABLE_OBSERVATIONS
             or (total_count > 0 and (valid_count / total_count) < self.MIN_USABLE_RATIO)
@@ -349,13 +306,13 @@ class FitnessSession:
         if is_recovering:
             return "recovering", recovery_msg
 
-        # 3. Analyze steady-state intensity
+        # 3. Analyze steady-state workout intensity
         summaries = self.calculate_summaries()
         avg_hr = summaries["heart_rate"]["mean"]
         avg_act = summaries["activity_level"]["mean"]
         hr_diff = summaries["baseline_deviations"]["hr_difference"]
 
-        # Resting: minimal elevation above personal baseline and very low movement
+        # Resting: minimal elevation above baseline and low movement
         if hr_diff <= 10.0 and avg_act < 0.25:
             reason = (
                 f"Average heart rate was {avg_hr} bpm ({hr_diff:+.1f} bpm from baseline) "
@@ -363,7 +320,7 @@ class FitnessSession:
             )
             return "resting", reason
 
-        # High Activity: elevated heart rate and sustained vigorous movement
+        # High Activity: high heart rate increase or high activity level
         if hr_diff >= 45.0 or avg_act >= 0.65:
             reason = (
                 f"Average heart rate was {avg_hr} bpm ({hr_diff:+.1f} bpm from baseline) "
@@ -371,15 +328,15 @@ class FitnessSession:
             )
             return "high activity", reason
 
-        # Moderate Activity: intermediate heart rate rise and moderate movement
+        # Moderate Activity: between resting and high activity
         reason = (
             f"Average heart rate was {avg_hr} bpm ({hr_diff:+.1f} bpm from baseline) "
             f"and activity averaged {avg_act:.2f}, indicating moderate workout intensity."
         )
         return "moderate activity", reason
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Produce the required structured dictionary representation of the session results."""
+    def to_dict(self):
+        """Return structured results as a dictionary."""
         classification, explanation = self.classify()
         summaries = self.calculate_summaries()
 
@@ -396,8 +353,8 @@ class FitnessSession:
             },
         }
 
-    def generate_report(self) -> str:
-        """Generate a readable, well-formatted console report describing the session."""
+    def generate_report(self):
+        """Generate a readable text report of the session."""
         classification, explanation = self.classify()
         summaries = self.calculate_summaries()
 
@@ -458,7 +415,7 @@ class FitnessSession:
             lines.append(f"\nRejected Sensor Observations ({len(rejected)} flagged):")
             rej_headers = ["Timestamp", "Heart Rate", "Activity", "Signal Qual", "Rejection Reasons"]
             rej_rows = []
-            for obs in rejected[:5]:  # show first 5 for clarity
+            for obs in rejected[:5]:  # show first 5
                 rej_rows.append([
                     str(obs.timestamp),
                     str(obs.heart_rate),
@@ -477,26 +434,23 @@ class FitnessSession:
 class AdvancedFitnessSession(FitnessSession):
     """Subclass of FitnessSession demonstrating Inheritance and Method Overriding.
 
-    Extends basic session classification and summaries by calculating cardiovascular
-    strain indices and estimating training stress.
+    Extends FitnessSession to calculate extra cardiovascular reserve metrics.
     """
 
-    def __init__(self, participant: Participant, session_name: str = "Advanced Session") -> None:
+    def __init__(self, participant, session_name="Advanced Session"):
         super().__init__(participant, session_name)
-        # Assumed standard estimation formula for maximal heart rate (220 - estimated age)
-        # Using 195 bpm as a standard reference ceiling for training load calculations
-        self.estimated_max_hr: int = 195
+        # Using 195 bpm as a standard max heart rate ceiling for training load
+        self.estimated_max_hr = 195
 
-    def calculate_summaries(self) -> Dict[str, Any]:
-        """Override calculate_summaries to append cardiovascular reserve metrics."""
-        # Call base class method
+    def calculate_summaries(self):
+        """Override calculate_summaries to add cardiovascular strain percentage."""
         summaries = super().calculate_summaries()
 
         if summaries["valid_observations"] > 0 and summaries["heart_rate"]["mean"] is not None:
             avg_hr = summaries["heart_rate"]["mean"]
             base_hr = self.participant.baseline_heart_rate
 
-            # Heart Rate Reserve (Karvonen method): (HR_avg - HR_rest) / (HR_max - HR_rest)
+            # Calculate heart rate reserve utilization
             hr_reserve = max(1, self.estimated_max_hr - base_hr)
             strain_ratio = max(0.0, min(1.0, (avg_hr - base_hr) / hr_reserve))
 
@@ -512,8 +466,8 @@ class AdvancedFitnessSession(FitnessSession):
 
         return summaries
 
-    def classify(self) -> Tuple[str, str]:
-        """Override classify to enrich base classification with cardiovascular load context."""
+    def classify(self):
+        """Override classify to add cardiovascular reserve info to the explanation."""
         base_class, base_reason = super().classify()
 
         if base_class == "insufficient data":
@@ -531,8 +485,8 @@ class AdvancedFitnessSession(FitnessSession):
 
         return base_class, base_reason
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Override to_dict to include the session type and cardiovascular strain metrics."""
+    def to_dict(self):
+        """Override to_dict to add the session type."""
         result = super().to_dict()
         result["session_type"] = "AdvancedFitnessSession"
         return result

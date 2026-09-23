@@ -1,12 +1,12 @@
-"""Comprehensive unit test suite for the Smart Fitness Session Analyzer.
+"""Unit tests for the Smart Fitness Session Analyzer.
 
-Verifies:
-1. Encapsulation and validation in the Participant class.
-2. Class methods, static methods, and sensor checks in the Observation class.
-3. Composition, summaries, and reporting in FitnessSession.
-4. Inheritance and method overriding in AdvancedFitnessSession.
-5. All standalone utility functions in calculations.py.
-6. The five core exercise scenarios (resting, moderate, high, recovery, poor-quality).
+Tests:
+- Participant class and property validation (encapsulation)
+- Observation class, from_dict classmethod, and validation checks
+- FitnessSession composition, statistics, and reports
+- AdvancedFitnessSession inheritance and method overriding
+- Standalone helper functions in calculations.py
+- The 5 scenarios: resting, moderate, high, recovery, poor quality
 """
 
 import unittest
