@@ -1,0 +1,16 @@
+REJECTED CSV RECORDS LOG
+========================================================================================
+Source File                  | Row   | Field            | Value        | Reason
+----------------------------------------------------------------------------------------
+fitness_sessions_invalid.csv | 3     | heart_rate       | fast         | Cannot convert heart_rate 'fast' to integer
+fitness_sessions_invalid.csv | 4     | participant_id   | 001          | Invalid Participant ID '001'. Must match format 'P' followed by 3 digits (e.g. 'P001').
+fitness_sessions_invalid.csv | 5     | activity_level   | EMPTY        | Missing required field 'activity_level'
+fitness_sessions_invalid.csv | 6     | signal_quality   | 1.4          | Signal quality value 1.4 is out of allowable range [0.0, 1.0]
+fitness_sessions_invalid.csv | 7     | session_id       | FIT-26-102   | Invalid Session ID 'FIT-26-102'. Must match format 'FIT-YYYY-NNN' (e.g. 'FIT-2026-001').
+fitness_sessions_invalid.csv | 8     | participant_id   | P999         | Unknown participant identifier 'P999' not found in profiles
+fitness_sessions_invalid.csv | 9     | timestamp        | two          | Cannot convert timestamp 'two' to integer
+fitness_sessions_invalid.csv | 10    | heart_rate       | -15          | Heart rate value -15 is out of allowable range [35, 205]
+fitness_sessions_invalid.csv | 11    | skin_response    | -0.5         | Skin response value -0.5 is out of allowable range [0.0, 50.0]
+fitness_sessions_invalid.csv | 12    | row_length       | 7 columns    | Expected 8 columns, found 7
+========================================================================================
+Total rejected rows: 10

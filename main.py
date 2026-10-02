@@ -1,96 +1,113 @@
-"""Main script to run and test the fitness session analyzer.
+"""Command-line entry point for the Smart Fitness Session Analyzer.
 
-Runs the five scenarios required by the assignment:
-1. Resting session
-2. Moderate activity
-3. High activity
-4. Recovery session
-5. Corrupted sensor data (poor quality)
+Usage:
+    python main.py
+    python main.py --profiles option_a_fitness/participants.csv \
+                   --sessions option_a_fitness/fitness_sessions.csv option_a_fitness/fitness_sessions_invalid.csv \
+                   --output output
 
-Prints console reports and structured dictionary output for each session.
+Loads participant profiles and session telemetry from CSV files,
+validates rows, classifies each session, and writes reports to the output folder.
 """
 
-import json
-from models import Participant, FitnessSession, AdvancedFitnessSession
-from sample_data import get_all_test_scenarios
+import sys
+import argparse
+from pathlib import Path
+
+from fitness_analyzer.data_loader import (
+    load_participants_csv,
+    load_sessions_csv,
+    save_reports,
+)
+from fitness_analyzer.exceptions import InvalidIdentifierError, InvalidRecordError
 
 
-def process_scenario(scenario_info, use_advanced_model=False):
-    """Create objects, validate data, and print report for a scenario."""
-    profile_data = scenario_info["profile"]
-    observations_raw = scenario_info["observations"]
-    title = scenario_info["title"]
-
-    # Create participant object
-    participant = Participant(
-        participant_id=profile_data["participant_id"],
-        baseline_heart_rate=profile_data["baseline_heart_rate"],
-        baseline_skin_response=profile_data["baseline_skin_response"],
-        baseline_temperature=profile_data["baseline_temperature"],
+def parse_arguments():
+    """Parse command line arguments with sensible defaults."""
+    parser = argparse.ArgumentParser(
+        description="Smart Fitness Session Analyzer - File-based telemetry analysis."
     )
-
-    # Create session (using AdvancedFitnessSession for recovery to show inheritance)
-    if use_advanced_model:
-        session = AdvancedFitnessSession(participant=participant, session_name=title)
-    else:
-        session = FitnessSession(participant=participant, session_name=title)
-
-    # Ingest raw observation dictionaries
-    session.add_raw_observations(observations_raw)
-
-    # Print the console report
-    report_text = session.generate_report()
-    print(report_text)
-    print()
-
-    # Return the dictionary format
-    return session.to_dict()
+    parser.add_argument(
+        "--profiles",
+        type=str,
+        default="option_a_fitness/participants.csv",
+        help="Path to participant profiles CSV file (default: option_a_fitness/participants.csv)",
+    )
+    parser.add_argument(
+        "--sessions",
+        nargs="+",
+        default=[
+            "option_a_fitness/fitness_sessions.csv",
+            "option_a_fitness/fitness_sessions_invalid.csv",
+        ],
+        help="One or more session CSV files to analyze",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="output",
+        help="Output directory for generated reports (default: output)",
+    )
+    return parser.parse_args()
 
 
 def main():
+    args = parse_arguments()
+
     print("\n" + "=" * 76)
-    print(" SMART FITNESS SESSION ANALYZER - ASSIGNMENT 1 ".center(76))
-    print("=" * 76 + "\n")
-
-    scenarios = get_all_test_scenarios()
-    session_results = []
-
-    for idx, scenario_info in enumerate(scenarios, 1):
-        print(f"\n--- Running Scenario {idx}/{len(scenarios)}: {scenario_info['title']} ---")
-
-        # Use AdvancedFitnessSession for the recovery scenario
-        use_advanced = (scenario_info["scenario"] == "recovery")
-        result_dict = process_scenario(scenario_info, use_advanced_model=use_advanced)
-        session_results.append(result_dict)
-
-    # Print a quick comparison table at the end
-    print("\n" + "=" * 76)
-    print(" OVERALL SCENARIOS SUMMARY")
+    print(" SMART FITNESS SESSION ANALYZER - ASSIGNMENT II ".center(76))
     print("=" * 76)
-    header = f"{'Scenario Name':<32} | {'Usable Obs':<10} | {'Classification':<18} | {'HR vs Base'}"
-    print(header)
+    print(f"Profiles file   : {args.profiles}")
+    print(f"Sessions files  : {', '.join(args.sessions)}")
+    print(f"Output folder   : {args.output}")
     print("-" * 76)
-    for res in session_results:
-        s_name = res["session_name"][:30]
-        usable = f"{res['observation_counts']['valid']}/{res['observation_counts']['total']}"
-        cls_label = res["classification"]
-        diff = res["summaries"]["baseline_deviations"]["hr_difference"]
-        diff_str = f"{diff:+.1f} bpm" if diff is not None else "N/A"
-        print(f"{s_name:<32} | {usable:<10} | {cls_label:<18} | {diff_str}")
-    print("=" * 76)
 
-    # Print a sample structured dictionary output
-    print("\n--- Sample Structured Dictionary Output (Scenario 1 JSON snippet) ---")
-    sample_snippet = {
-        "session_name": session_results[0]["session_name"],
-        "participant_id": session_results[0]["participant"]["participant_id"],
-        "classification": session_results[0]["classification"],
-        "explanation": session_results[0]["explanation"],
-        "heart_rate_summary": session_results[0]["summaries"]["heart_rate"],
-        "usable_percentage": session_results[0]["summaries"]["usable_percentage"],
-    }
-    print(json.dumps(sample_snippet, indent=2))
-    print("\nAll scenarios processed successfully.\n")
+    # 1. Load Participant Profiles (targeted try/except for file and format errors)
+    try:
+        participants = load_participants_csv(args.profiles)
+        print(f"Loaded {len(participants)} participant profile(s) successfully.")
+    except FileNotFoundError as e:
+        print(f"Error: Profiles file not found: {e}")
+        sys.exit(1)
+    except PermissionError as e:
+        print(f"Error: Permission denied accessing profiles file: {e}")
+        sys.exit(1)
+    except (InvalidIdentifierError, InvalidRecordError) as e:
+        print(f"Error in profiles file data format: {e}")
+        sys.exit(1)
+
+    # 2. Load and Validate Session Records
+    sessions, rejected_records, stats = load_sessions_csv(args.sessions, participants)
+
+    # 3. Save Reports to Output Directory
+    created_files = save_reports(sessions, rejected_records, args.output)
+
+    # 4. Print Completion Summary (Required by Section 7)
+    print("\n" + "=" * 76)
+    print(" COMPLETION SUMMARY ".center(76))
+    print("=" * 76)
+    print(f"Total rows examined      : {stats['total_rows']}")
+    print(f"Accepted rows            : {stats['accepted_rows']}")
+    print(f"Rejected rows quarantined: {stats['rejected_rows']}")
+    print(f"Processed workout sessions: {len(sessions)}")
+    print("-" * 76)
+
+    print(f"{'Session ID':<14} | {'Participant':<16} | {'Classification':<18} | {'Usable Obs'}")
+    print("-" * 76)
+    for s_id in sorted(sessions.keys()):
+        sess = sessions[s_id]
+        cls_label, _ = sess.classify()
+        valid_cnt = len(sess.get_valid_observations())
+        total_cnt = len(sess.observations)
+        print(
+            f"{s_id:<14} | {sess.participant.name[:15]:<16} | {cls_label:<18} | {valid_cnt}/{total_cnt}"
+        )
+    print("-" * 76)
+
+    print("Created report files:")
+    for file_path in created_files:
+        print(f"  - {file_path}")
+    print("=" * 76 + "\n")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,7 @@
+session_id,participant_id,participant_name,classification,valid_observations,total_observations,usable_percentage,avg_heart_rate,hr_difference_from_baseline,avg_temperature,avg_activity_level
+FIT-2026-001,P001,Amina Noor,resting,6,6,100.0%,68.83,+0.8,32.43,0.09
+FIT-2026-002,P002,Jonas Berg,moderate activity,6,6,100.0%,102.0,+28.0,33.13,0.5
+FIT-2026-003,P003,Maya Chen,high activity,6,6,100.0%,132.5,+69.5,33.53,0.75
+FIT-2026-004,P001,Amina Noor,recovering,6,6,100.0%,113.17,+45.2,33.28,0.55
+FIT-2026-005,P002,Jonas Berg,insufficient data,0,5,0.0%,N/A,N/A,N/A,N/A
+FIT-2026-101,P001,Amina Noor,insufficient data,1,1,100.0%,72.0,+4.0,32.5,0.1

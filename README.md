@@ -1,211 +1,213 @@
-# Smart Fitness Session Analyzer
----
+# Smart Fitness Session Analyzer (Assignment II)
 
 ## 1. Project Overview
 
-In this individual assignment, I developed an object-oriented Python application to process, validate, and analyze sensor data collected from wearable fitness devices during gym workouts.
+In **Assignment II**, I extended the object-oriented fitness session analyzer from Assignment I into a complete, file-based Python application. 
 
-In practical fitness monitoring, raw sensor streams are frequently noisy. Wearable devices often drop readings (`None` values), produce sensor errors (such as impossible heart rates like 265 bpm or negative activity levels), or suffer from poor signal quality. My program takes the raw dictionary data for a participant and their session readings, filters out invalid or corrupted observations, calculates summary statistics (mean, min, max), compares measurements against the participant's personal resting baselines, and classifies the workout session into one of five categories:
-- `resting`
-- `moderate activity`
-- `high activity`
-- `recovering`
-- `insufficient data`
+Instead of generating simulated data in memory, the program now reads official CSV files, validates records, handles malformed inputs and corrupted measurements safely without crashing, groups observations by session, and writes detailed analysis reports to an `output/` directory.
 
-Following the assignment requirements, I built the entire application using only Python's standard library (`typing`, `json`, `math`, `pathlib`, `sys`, and `unittest`) without using third-party libraries like pandas, numpy, or scikit-learn.
+The application satisfies all assignment criteria:
+- **File-based Ingestion:** Safely reads `participants.csv`, `fitness_sessions.csv`, and `fitness_sessions_invalid.csv` using Python's `csv` module and `with open(..., encoding="utf-8", newline="")`.
+- **Regex Validation:** Validates participant and session identifiers with anchored regular expressions (`^P\d{3}$` and `^FIT-\d{4}-\d{3}$`).
+- **Custom Exceptions:** Defines and handles `InvalidIdentifierError` and `InvalidRecordError`.
+- **Targeted Error Handling:** Catches specific exceptions (`FileNotFoundError`, `PermissionError`, `ValueError`, `KeyError`) and quarantines invalid records with full diagnostics rather than terminating.
+- **Reporting:** Automatically creates an `output/` directory containing `analysis_summary.csv`, `analysis_report.txt`, and `rejected_records.txt`.
+- **Standard Library Only:** Built strictly using Python built-in modules (`argparse`, `csv`, `re`, `pathlib`, `typing`, `math`, `unittest`) without any external dependencies.
 
 ---
 
-## 2. Project Structure and Class Design
+## 2. Package and Module Architecture
 
-I organized the codebase into modular Python files to maintain clear separation of responsibilities:
+I organized the codebase into a clean Python package named `fitness_analyzer` with dedicated modules:
 
 ```text
 Smart_Fitness_Session_Analyzer/
-|-- option_a_fitness/       # Instructor-provided data generator
-|   |-- DATA_DESCRIPTION.md
-|   |-- data_generator.py
-|   `-- example_usage.py
-|-- models.py               # Domain classes: Participant, Observation, and Sessions
-|-- calculations.py         # Standalone helper functions for math, trend detection, and formatting
-|-- sample_data.py          # Data loader interfacing with the scenario generator
-|-- main.py                 # Main runner script demonstrating all five scenarios
-|-- tests.py                # Unit test suite testing all classes and scenarios (31 tests)
-|-- requirements.txt        # Notes that only the Python standard library is used
-|-- .gitignore              # Ignores __pycache__ and bytecode files
-`-- README.md               # Project documentation
+|-- fitness_analyzer/                 # Python package
+|   |-- __init__.py                   # Package exports
+|   |-- exceptions.py                 # Custom exception classes
+|   |-- validators.py                 # Regular expression and range validation
+|   |-- models.py                     # Domain models: Participant, Observation, Sessions
+|   |-- calculations.py               # Statistical and trend calculation helpers
+|   `-- data_loader.py                # CSV ingestion, record validation, and output writers
+|-- option_a_fitness/                 # Course data files
+|   |-- participants.csv              # Official participant profiles
+|   |-- fitness_sessions.csv          # Official valid session records
+|   `-- fitness_sessions_invalid.csv  # Official corrupted session records
+|-- main.py                           # CLI entry point with argparse
+|-- tests.py                          # Comprehensive unit test suite
+|-- requirements.txt                  # Standard library declaration
+|-- .gitignore                        # Ignores __pycache__ and bytecode
+`-- README.md                         # Project documentation
 ```
 
-### Class Responsibilities
+### Module Responsibilities
 
-| Class | Location | Purpose |
-|---|---|---|
-| **`Participant`** | `models.py` | Stores participant profile data and resting baselines (heart rate, skin response, and skin temperature). Uses property getters and setters to protect and validate these values. |
-| **`Observation`** | `models.py` | Represents a single sensor reading window. Validates measurement values against acceptable ranges and records specific error reasons if data is invalid. |
-| **`FitnessSession`** | `models.py` | Represents a complete workout session. Demonstrates composition by containing a `Participant` object and a list of `Observation` objects. Calculates summaries, handles session classification, and builds reports. |
-| **`AdvancedFitnessSession`** | `models.py` | A subclass of `FitnessSession` demonstrating inheritance and method overriding. It adds heart rate reserve calculations to evaluate cardiovascular strain. |
-
----
-
-## 3. Object-Oriented Programming Requirements
-
-### A. Encapsulation
-- **Where:** Inside the `Participant` class in `models.py`.
-- **How I implemented it:** Personal resting baselines are stored in private/protected variables (`_baseline_heart_rate`, `_baseline_skin_response`, and `_baseline_temperature`). Access is controlled through `@property` getters and setters. For example, `baseline_heart_rate` validates that the input is a number between 35 and 110 bpm; invalid types raise a `TypeError` and out-of-range values raise a `ValueError`. Skin response is guarded against negative numbers, and skin temperature is restricted to plausible human skin limits (28–38 deg C).
-
-### B. Composition
-- **Where:** Inside the `FitnessSession` class in `models.py`.
-- **How I implemented it:** A `FitnessSession` has a `Participant` instance (`self.participant`) and maintains a list of `Observation` instances (`self.observations`). The session manages these objects directly, filters valid readings from rejected ones, and computes aggregate statistics across them.
-
-### C. Inheritance and Method Overriding
-- **Where:** `AdvancedFitnessSession` inherits from `FitnessSession` in `models.py`.
-- **How I implemented it:**
-  - `calculate_summaries()`: Calls `super().calculate_summaries()` to obtain the base statistics, then calculates the participant's Heart Rate Reserve utilization percentage using the Karvonen formula.
-  - `classify()`: Calls `super().classify()` to get the base category, then appends the heart rate reserve percentage to provide extra context in the explanation.
-  - `to_dict()`: Overrides the method to add `"session_type": "AdvancedFitnessSession"` to the returned dictionary.
-
-### D. Class Method and Static Method
-- **Class Method:** `Observation.from_dict(cls, data)` in `models.py`. This is an alternative constructor that takes a raw dictionary from the data generator and turns it into a validated `Observation` instance.
-- **Static Method:** `Observation.validate_metric_range(value, lower_bound, upper_bound, metric_name)` in `models.py`. A utility helper that checks if a numeric metric falls within expected bounds without needing access to instance state.
+| Module | Core Responsibility |
+|---|---|
+| **`fitness_analyzer.exceptions`** | Defines `InvalidIdentifierError` and `InvalidRecordError` (subclassing `ValueError`). |
+| **`fitness_analyzer.validators`** | Anchored regex patterns (`^P\d{3}$`, `^FIT-\d{4}-\d{3}$`, `^.+\.csv$`) and numerical boundary checks. |
+| **`fitness_analyzer.models`** | Object-oriented domain classes demonstrating encapsulation (`Participant`), data cleaning (`Observation`), and composition/inheritance (`FitnessSession`, `AdvancedFitnessSession`). |
+| **`fitness_analyzer.calculations`** | Standalone functions for summary stats (mean, min, max), cooldown recovery trend detection, and personal baseline deviations. |
+| **`fitness_analyzer.data_loader`** | Reads CSV inputs with proper UTF-8 encoding, detects corrupted/missing rows, groups observations by session, and writes report files. |
 
 ---
 
-## 4. Standalone Functions
+## 3. Regular Expression Validation
 
-In `calculations.py`, I created five standalone functions to handle calculations, validation, and presentation:
+Per Section 4.2 of the assignment specification, identifiers are validated using compiled, anchored regular expressions with full-match behavior:
 
-1. **`calculate_summary_statistics(values)`**  
-   Calculates the average, minimum, maximum, and count of a list of numbers. Handles empty lists safely by returning `None` instead of causing a division-by-zero error.
-2. **`detect_recovery_trend(observations)`**  
-   Splits the session into early and late windows (first third vs. last third). Checks if both heart rate and activity dropped noticeably, confirming whether the participant was cooling down.
-3. **`calculate_baseline_deviations(avg_hr, avg_temp, baseline_hr, baseline_temp)`**  
-   Calculates the difference and percentage change between session averages and the participant's personal baselines.
-4. **`format_console_table(headers, rows)`**  
-   A presentation helper that formats data into a clean, aligned ASCII table for terminal display.
-5. **`validate_raw_observation_dict(raw)`**  
-   A validation helper that checks whether an incoming raw dictionary contains all required keys before parsing.
+```python
+PARTICIPANT_ID_PATTERN = re.compile(r"^P\d{3}$")
+SESSION_ID_PATTERN = re.compile(r"^FIT-\d{4}-\d{3}$")
+CSV_FILENAME_PATTERN = re.compile(r"^.+\.csv$", re.IGNORECASE)
+```
+
+- **Participant ID:** Requires uppercase `'P'` followed by exactly three digits (e.g., `P001`, `P002`). Invalid formats like `001` or `P99` raise `InvalidIdentifierError`.
+- **Fitness Session ID:** Requires `'FIT-'` followed by a 4-digit year and a 3-digit sequence (e.g., `FIT-2026-001`). Invalid formats like `FIT-26-102` raise `InvalidIdentifierError`.
+- **CSV Filenames:** Ensures files have a `.csv` extension before attempting to open them.
+- *Note:* In accordance with the assignment guidelines, regular expressions are **not** used for numerical range checks; ordinary Python comparisons (`value < min_val or value > max_val`) are used instead.
 
 ---
 
-## 5. Assumptions and Classification Rules
+## 4. Custom Exceptions and Error Handling
 
-### Data Validation Rules
-An observation is rejected and marked as invalid if:
-- `signal_quality` is below 0.60 or missing (`None`): Sensor readings are unreliable.
-- `heart_rate` is missing (`None`) or outside 35–205 bpm.
-- `skin_response` is missing (`None`) or negative.
-- `temperature` is missing (`None`) or outside 25.0–42.0 deg C.
-- `activity_level` is missing (`None`) or outside 0.0–1.0.
+Per Section 4.4, I created two custom exception classes:
 
-### Session Classification Logic
-The program classifies a session using the following rules in order:
-1. **`insufficient data`**: If there are fewer than 5 valid observations, or if valid observations make up less than 50% of the total session.
-2. **`recovering`**: If `detect_recovery_trend()` detects that heart rate dropped by at least 15.0 bpm and activity dropped by at least 0.20 between the start and end of the session.
-3. **`resting`**: If average heart rate was within 10.0 bpm of baseline and average activity was under 0.25.
-4. **`high activity`**: If average heart rate was 45.0+ bpm above baseline or activity averaged 0.65 or higher.
-5. **`moderate activity`**: Any session that falls between resting and high activity levels.
+```python
+class InvalidIdentifierError(ValueError):
+    """Raised when an identifier has an invalid format."""
+    pass
+
+class InvalidRecordError(ValueError):
+    """Raised when a CSV record cannot be accepted."""
+    pass
+```
+
+### Targeted Exception Handling Strategy
+The program avoids broad `except Exception:` blocks. Instead, it catches specific errors:
+- **`FileNotFoundError` / `PermissionError`:** Handled when opening files. If the profiles file cannot be read, the user receives an informative message. For session files, a missing file logs a warning and allows the program to process remaining files.
+- **`ValueError` / `KeyError` / `csv.Error`:** Caught during CSV conversion when fields are empty, unparseable (`"fast"` or `"two"`), or when unexpected column lengths occur.
+- **Quarantining Invalid Rows:** When a row in a session file is corrupted, the program does not crash. It records the source file, row number, faulty field, raw value, and reason into `rejected_records.txt` and continues to the next row.
+
+---
+
+## 5. Generated Output Files
+
+When executed, the program automatically creates an `output/` directory (using `pathlib.Path.mkdir(parents=True, exist_ok=True)`) containing three report files:
+
+### 1. `output/analysis_summary.csv`
+Contains exactly one summary row for each processed workout session:
+```csv
+session_id,participant_id,participant_name,classification,valid_observations,total_observations,usable_percentage,avg_heart_rate,hr_difference_from_baseline,avg_temperature,avg_activity_level
+FIT-2026-001,P001,Amina Noor,resting,6,6,100.0%,68.83,+0.8,32.43,0.09
+FIT-2026-002,P002,Jonas Berg,moderate activity,6,6,100.0%,102.0,+28.0,33.13,0.5
+FIT-2026-003,P003,Maya Chen,high activity,6,6,100.0%,132.5,+69.5,33.53,0.75
+FIT-2026-004,P001,Amina Noor,recovering,6,6,100.0%,113.17,+45.2,33.28,0.55
+FIT-2026-005,P002,Jonas Berg,insufficient data,0,5,0.0%,N/A,N/A,N/A,N/A
+FIT-2026-101,P001,Amina Noor,insufficient data,1,1,100.0%,72.0,+4.0,32.5,0.1
+```
+
+### 2. `output/analysis_report.txt`
+A detailed, human-readable report for each session, including participant baseline comparisons and classification reasoning.
+
+### 3. `output/rejected_records.txt`
+A formatted log detailing every quarantined CSV row:
+```text
+REJECTED CSV RECORDS LOG
+========================================================================================
+Source File                  | Row   | Field            | Value        | Reason
+----------------------------------------------------------------------------------------
+fitness_sessions_invalid.csv | 3     | heart_rate       | fast         | Cannot convert heart_rate 'fast' to integer
+fitness_sessions_invalid.csv | 4     | participant_id   | 001          | Invalid Participant ID '001'. Must match format 'P' followed by 3 digits (e.g. 'P001').
+fitness_sessions_invalid.csv | 5     | activity_level   | EMPTY        | Missing required field 'activity_level'
+fitness_sessions_invalid.csv | 6     | signal_quality   | 1.4          | Signal quality value 1.4 is out of allowable range [0.0, 1.0]
+fitness_sessions_invalid.csv | 7     | session_id       | FIT-26-102   | Invalid Session ID 'FIT-26-102'. Must match format 'FIT-YYYY-NNN' (e.g. 'FIT-2026-001').
+fitness_sessions_invalid.csv | 8     | participant_id   | P999         | Unknown participant identifier 'P999' not found in profiles
+fitness_sessions_invalid.csv | 9     | timestamp        | two          | Cannot convert timestamp 'two' to integer
+fitness_sessions_invalid.csv | 10    | heart_rate       | -15          | Heart rate value -15 is out of allowable range [35, 205]
+fitness_sessions_invalid.csv | 11    | skin_response    | -0.5         | Skin response value -0.5 is out of allowable range [0.0, 50.0]
+fitness_sessions_invalid.csv | 12    | row_length       | 7 columns    | Expected 8 columns, found 7
+========================================================================================
+Total rejected rows: 10
+```
 
 ---
 
 ## 6. How to Run the Program
 
-### Prerequisites
-- Python 3.10 or newer (tested on Python 3.13).
-- Uses only Python's built-in standard library.
+### Running with Default Arguments
+Simply run the script from the repository root; it automatically defaults to the course CSV files:
+```bash
+# On Windows:
+python main.py
 
-### Commands
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/mhshaon23/Smart_Fitness_Session_Analyzer.git
-   cd Smart_Fitness_Session_Analyzer
-   ```
-
-2. **Run the main application:**
-   ```bash
-   # On Windows:
-   python main.py
-
-   # On macOS/Linux:
-   python3 main.py
-   ```
-
-3. **Run the unit tests:**
-   ```bash
-   # On Windows:
-   python -m unittest tests.py -v
-
-   # On macOS/Linux:
-   python3 -m unittest tests.py -v
-   ```
-
----
-
-## 7. Example Output
-
-### Console Report (Scenario 2: Moderate Activity)
-
-```text
-========================================================================
- FITNESS SESSION REPORT: MODERATE CARDIO SESSION
-========================================================================
-Participant ID       : P-MOD-02
-Personal Baselines   : HR 82 bpm | Temp 32.3 deg C | Skin 1.58
-------------------------------------------------------------------------
-SESSION CLASSIFICATION: MODERATE ACTIVITY
-Reason: Average heart rate was 113.0 bpm (+31.0 bpm from baseline) and activity averaged 0.51, indicating moderate workout intensity.
-------------------------------------------------------------------------
-Observations Overview: 12 usable out of 12 total (100.0% valid)
-
-Summary Statistics (Usable Data Only):
-+---------------------+-------+-------+-------+--------------------+
-| Metric              | Mean  | Min   | Max   | vs Baseline        |
-+---------------------+-------+-------+-------+--------------------+
-| Heart Rate (bpm)    | 113.0 | 107.0 | 122.0 | +31.0 bpm (+37.8%) |
-| Activity (0-1)      |  0.51 |  0.41 |  0.63 | N/A                |
-| Temperature (deg C) | 32.49 | 32.29 | 32.65 | +0.19 deg C        |
-+---------------------+-------+-------+-------+--------------------+
-========================================================================
+# On macOS/Linux:
+python3 main.py
 ```
 
-### Sensor Rejection Table (Scenario 5: Corrupted Data)
+### Running with Custom Command-Line Flags
+Per Section 7, the application supports command-line arguments using `argparse`:
+```bash
+# Windows
+python main.py --profiles option_a_fitness/participants.csv --sessions option_a_fitness/fitness_sessions.csv option_a_fitness/fitness_sessions_invalid.csv --output output
 
-```text
-Rejected Sensor Observations (12 flagged):
-+-----------+------------+----------+-------------+---------------------------------------------------------------------------------------------------------------------------+
-| Timestamp | Heart Rate | Activity | Signal Qual | Rejection Reasons                                                                                                         |
-+-----------+------------+----------+-------------+---------------------------------------------------------------------------------------------------------------------------+
-|         0 | None       |     0.48 |        0.46 | Signal quality 0.46 is below reliability threshold (0.60); Missing value for heart_rate                                   |
-|         1 |        265 |     0.54 |         0.5 | Signal quality 0.50 is below reliability threshold (0.60); heart_rate value 265 is out of allowable range [35, 205]       |
-|         2 |         71 |     -0.2 |        0.11 | Signal quality 0.11 is below reliability threshold (0.60); activity_level value -0.2 is out of allowable range [0.0, 1.0] |
-+-----------+------------+----------+-------------+---------------------------------------------------------------------------------------------------------------------------+
+# macOS/Linux
+python3 main.py --profiles option_a_fitness/participants.csv --sessions option_a_fitness/fitness_sessions.csv option_a_fitness/fitness_sessions_invalid.csv --output output
 ```
 
-### Structured Dictionary Output Sample (`session.to_dict()`)
+### Running Automated Tests
+```bash
+# Windows:
+python -m unittest tests.py -v
 
-```json
-{
-  "session_name": "Resting Session",
-  "participant_id": "P-REST-01",
-  "classification": "resting",
-  "explanation": "Average heart rate was 77.92 bpm (+1.9 bpm from baseline) with minimal activity (0.12), consistent with rest.",
-  "heart_rate_summary": {
-    "mean": 77.92,
-    "min": 75.0,
-    "max": 81.0,
-    "count": 12
-  },
-  "usable_percentage": 100.0
-}
+# macOS/Linux:
+python3 -m unittest tests.py -v
 ```
 
 ---
 
-## 8. Limitations & Possible Improvements
+## 7. Console Completion Summary Sample
 
-1. **Recovery window splitting:**  
-   My recovery detection splits observations into thirds (early vs. late). While this works well for steady recovery after a workout, an interval training session with multiple recovery periods would require a rolling average or slope calculation.
-2. **Estimated maximum heart rate:**  
-   `AdvancedFitnessSession` uses a standard estimate of 195 bpm because age and gender are not included in the participant profile. In a real system, age and fitness level would be used to calculate a personalized max heart rate.
-3. **Discarding vs. interpolating bad data:**  
-   Currently, any window with missing or corrupted values is completely discarded. In a production app, short gaps with missing points could be interpolated from surrounding valid readings if the signal quality is otherwise good.
+When executed, the program prints a clean summary to the terminal:
+
+```text
+============================================================================
+               SMART FITNESS SESSION ANALYZER - ASSIGNMENT II               
+============================================================================
+Profiles file   : option_a_fitness/participants.csv
+Sessions files  : option_a_fitness/fitness_sessions.csv, option_a_fitness/fitness_sessions_invalid.csv
+Output folder   : output
+----------------------------------------------------------------------------
+Loaded 3 participant profile(s) successfully.
+
+============================================================================
+                             COMPLETION SUMMARY                             
+============================================================================
+Total rows examined      : 40
+Accepted rows            : 30
+Rejected rows quarantined: 10
+Processed workout sessions: 6
+----------------------------------------------------------------------------
+Session ID     | Participant      | Classification     | Usable Obs
+----------------------------------------------------------------------------
+FIT-2026-001   | Amina Noor       | resting            | 6/6
+FIT-2026-002   | Jonas Berg       | moderate activity  | 6/6
+FIT-2026-003   | Maya Chen        | high activity      | 6/6
+FIT-2026-004   | Amina Noor       | recovering         | 6/6
+FIT-2026-005   | Jonas Berg       | insufficient data  | 0/5
+FIT-2026-101   | Amina Noor       | insufficient data  | 1/1
+----------------------------------------------------------------------------
+Created report files:
+  - output\analysis_summary.csv
+  - output\analysis_report.txt
+  - output\rejected_records.txt
+============================================================================
+```
+
+---
+
+## 8. Limitations & Design Considerations
+
+1. **Header Assumption:** The program assumes CSV files include standard header rows. If a headerless CSV is passed, the first data row is treated as the column names.
+2. **Missing Point Recovery:** Currently, rows with missing or corrupted fields are completely quarantined. In a production telemetry pipeline, isolated missing data points could be estimated using linear interpolation if the overall signal quality is high.
+3. **Encoding:** All file operations explicitly use `encoding="utf-8"` and `newline=""` to guarantee consistent cross-platform behavior across Windows, macOS, and Linux.

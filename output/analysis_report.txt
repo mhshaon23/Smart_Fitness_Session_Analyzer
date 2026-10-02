@@ -1,0 +1,131 @@
+SMART FITNESS SESSION ANALYZER - COMPLETE ANALYSIS REPORT
+========================================================================
+
+========================================================================
+ FITNESS SESSION REPORT: FIT-2026-001 (Session FIT-2026-001)
+========================================================================
+Participant          : Amina Noor (P001)
+Personal Baselines   : HR 68 bpm | Temp 32.4 deg C | Skin 1.2
+------------------------------------------------------------------------
+SESSION CLASSIFICATION: RESTING
+Reason: Average heart rate was 68.83 bpm (+0.8 bpm from baseline) with minimal activity (0.09), consistent with rest.
+------------------------------------------------------------------------
+Observations Overview: 6 usable out of 6 total (100.0% valid)
+
+Summary Statistics (Usable Data Only):
++---------------------+-------+------+------+------------------+
+| Metric              | Mean  | Min  | Max  | vs Baseline      |
++---------------------+-------+------+------+------------------+
+| Heart Rate (bpm)    | 68.83 | 68.0 | 70.0 | +0.8 bpm (+1.2%) |
+| Activity (0-1)      |  0.09 | 0.07 | 0.12 | N/A              |
+| Temperature (deg C) | 32.43 | 32.4 | 32.5 | +0.03 deg C      |
++---------------------+-------+------+------+------------------+
+========================================================================
+
+========================================================================
+ FITNESS SESSION REPORT: FIT-2026-002 (Session FIT-2026-002)
+========================================================================
+Participant          : Jonas Berg (P002)
+Personal Baselines   : HR 74 bpm | Temp 32.7 deg C | Skin 1.45
+------------------------------------------------------------------------
+SESSION CLASSIFICATION: MODERATE ACTIVITY
+Reason: Average heart rate was 102.0 bpm (+28.0 bpm from baseline) and activity averaged 0.50, indicating moderate workout intensity.
+------------------------------------------------------------------------
+Observations Overview: 6 usable out of 6 total (100.0% valid)
+
+Summary Statistics (Usable Data Only):
++---------------------+-------+------+-------+--------------------+
+| Metric              | Mean  | Min  | Max   | vs Baseline        |
++---------------------+-------+------+-------+--------------------+
+| Heart Rate (bpm)    | 102.0 | 78.0 | 118.0 | +28.0 bpm (+37.8%) |
+| Activity (0-1)      |   0.5 | 0.22 |  0.68 | N/A                |
+| Temperature (deg C) | 33.13 | 32.8 |  33.4 | +0.43 deg C        |
++---------------------+-------+------+-------+--------------------+
+========================================================================
+
+========================================================================
+ FITNESS SESSION REPORT: FIT-2026-003 (Session FIT-2026-003)
+========================================================================
+Participant          : Maya Chen (P003)
+Personal Baselines   : HR 63 bpm | Temp 32.3 deg C | Skin 1.1
+------------------------------------------------------------------------
+SESSION CLASSIFICATION: HIGH ACTIVITY
+Reason: Average heart rate was 132.5 bpm (+69.5 bpm from baseline) with elevated activity (0.75), indicating high exertion.
+------------------------------------------------------------------------
+Observations Overview: 6 usable out of 6 total (100.0% valid)
+
+Summary Statistics (Usable Data Only):
++---------------------+-------+------+-------+---------------------+
+| Metric              | Mean  | Min  | Max   | vs Baseline         |
++---------------------+-------+------+-------+---------------------+
+| Heart Rate (bpm)    | 132.5 | 72.0 | 162.0 | +69.5 bpm (+110.3%) |
+| Activity (0-1)      |  0.75 | 0.25 |  0.94 | N/A                 |
+| Temperature (deg C) | 33.53 | 32.5 |  34.1 | +1.23 deg C         |
++---------------------+-------+------+-------+---------------------+
+========================================================================
+
+========================================================================
+ FITNESS SESSION REPORT: FIT-2026-004 (Session FIT-2026-004)
+========================================================================
+Participant          : Amina Noor (P001)
+Personal Baselines   : HR 68 bpm | Temp 32.4 deg C | Skin 1.2
+------------------------------------------------------------------------
+SESSION CLASSIFICATION: RECOVERING
+Reason: Activity followed by recovery: heart rate peaked at 151 bpm and declined to 93.0 bpm (-58.0 bpm) with activity dropping from 0.92 to 0.30 near the end.
+------------------------------------------------------------------------
+Observations Overview: 6 usable out of 6 total (100.0% valid)
+
+Summary Statistics (Usable Data Only):
++---------------------+--------+------+-------+--------------------+
+| Metric              | Mean   | Min  | Max   | vs Baseline        |
++---------------------+--------+------+-------+--------------------+
+| Heart Rate (bpm)    | 113.17 | 72.0 | 151.0 | +45.2 bpm (+66.4%) |
+| Activity (0-1)      |   0.55 | 0.18 |  0.92 | N/A                |
+| Temperature (deg C) |  33.28 | 32.6 |  33.9 | +0.88 deg C        |
++---------------------+--------+------+-------+--------------------+
+========================================================================
+
+========================================================================
+ FITNESS SESSION REPORT: FIT-2026-005 (Session FIT-2026-005)
+========================================================================
+Participant          : Jonas Berg (P002)
+Personal Baselines   : HR 74 bpm | Temp 32.7 deg C | Skin 1.45
+------------------------------------------------------------------------
+SESSION CLASSIFICATION: INSUFFICIENT DATA
+Reason: Only 0/5 observations are valid (minimum 3 and 50% required). Insufficient usable data for analysis.
+------------------------------------------------------------------------
+Observations Overview: 0 usable out of 5 total (0.0% valid)
+
+Rejected Sensor Observations (5 flagged):
++-----------+------------+----------+-------------+------------------------------------------------------------+
+| Timestamp | Heart Rate | Activity | Signal Qual | Rejection Reasons                                          |
++-----------+------------+----------+-------------+------------------------------------------------------------+
+|         0 |         76 |     0.12 |        0.34 | Signal quality 0.34 is outside reliable range [0.60, 1.00] |
+|         1 |         79 |     0.18 |        0.29 | Signal quality 0.29 is outside reliable range [0.60, 1.00] |
+|         2 |         95 |     0.35 |        0.25 | Signal quality 0.25 is outside reliable range [0.60, 1.00] |
+|         3 |        101 |     0.42 |        0.31 | Signal quality 0.31 is outside reliable range [0.60, 1.00] |
+|         4 |         88 |     0.25 |        0.28 | Signal quality 0.28 is outside reliable range [0.60, 1.00] |
++-----------+------------+----------+-------------+------------------------------------------------------------+
+========================================================================
+
+========================================================================
+ FITNESS SESSION REPORT: FIT-2026-101 (Session FIT-2026-101)
+========================================================================
+Participant          : Amina Noor (P001)
+Personal Baselines   : HR 68 bpm | Temp 32.4 deg C | Skin 1.2
+------------------------------------------------------------------------
+SESSION CLASSIFICATION: INSUFFICIENT DATA
+Reason: Only 1/1 observations are valid (minimum 3 and 50% required). Insufficient usable data for analysis.
+------------------------------------------------------------------------
+Observations Overview: 1 usable out of 1 total (100.0% valid)
+
+Summary Statistics (Usable Data Only):
++---------------------+------+------+------+------------------+
+| Metric              | Mean | Min  | Max  | vs Baseline      |
++---------------------+------+------+------+------------------+
+| Heart Rate (bpm)    | 72.0 | 72.0 | 72.0 | +4.0 bpm (+5.9%) |
+| Activity (0-1)      |  0.1 |  0.1 |  0.1 | N/A              |
+| Temperature (deg C) | 32.5 | 32.5 | 32.5 | +0.10 deg C      |
++---------------------+------+------+------+------------------+
+========================================================================
+
